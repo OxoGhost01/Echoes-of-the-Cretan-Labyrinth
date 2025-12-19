@@ -6,15 +6,24 @@ class MapManager:
     def __init__(self, map_path):
         self.map_image = Image.open(map_path).convert("RGB")
         self.map_width, self.map_height = self.map_image.size
-
         self.cols = self.map_width // ROOM_WIDTH
         self.rows = self.map_height // ROOM_HEIGHT
         self.current_room = (0, 0)
-
-        # Precompute wall masks for each room
+        
+        # Keys inventory (color: has_key)
+        self.keys = {
+            'black': False,
+            'white': False,
+            'yellow': False
+        }
+        
+        # Precompute wall masks and special room info for each room
         self.rooms_masks = []
+        self.rooms_special = []  # Store special room type
+        
         for row in range(self.rows):
             row_masks = []
+            row_special = []
             for col in range(self.cols):
                 room_box = (
                     col * ROOM_WIDTH,
@@ -23,14 +32,90 @@ class MapManager:
                     (row + 1) * ROOM_HEIGHT
                 )
                 room_image = self.map_image.crop(room_box)
-                mask = self.create_wall_mask(room_image)
+                
+                # Detect special room type
+                special_type = self.detect_special_room(room_image)
+                row_special.append(special_type)
+                
+                # Create appropriate mask
+                if special_type:
+                    mask = self.create_special_room_mask(room_image, special_type)
+                else:
+                    mask = self.create_wall_mask(room_image)
+                
                 row_masks.append(mask)
+            
             self.rooms_masks.append(row_masks)
-
+            self.rooms_special.append(row_special)
+    
+    def detect_special_room(self, room_image):
+        """Detect if room is a special key room by checking dominant non-grey color"""
+        pixels = room_image.load()
+        color_counts = {'black': 0, 'white': 0, 'yellow': 0}
+        
+        # Sample center area to determine room type
+        center_x = room_image.width // 2
+        center_y = room_image.height // 2
+        sample_size = 20
+        
+        for y in range(max(0, center_y - sample_size), min(room_image.height, center_y + sample_size)):
+            for x in range(max(0, center_x - sample_size), min(room_image.width, center_x + sample_size)):
+                r, g, b = pixels[x, y]
+                
+                # Skip grey pixels
+                if 165 <= r <= 175 and 165 <= g <= 175 and 165 <= b <= 175:
+                    continue
+                
+                # Detect black (very dark)
+                if r < 30 and g < 30 and b < 30:
+                    color_counts['black'] += 1
+                # Detect white (very bright)
+                elif r > 240 and g > 240 and b > 240:
+                    color_counts['white'] += 1
+                # Detect yellow
+                elif r > 200 and g > 200 and b < 100:
+                    color_counts['yellow'] += 1
+        
+        # Return the dominant special color if any
+        max_color = max(color_counts, key=color_counts.get)
+        if color_counts[max_color] > 50:  # Threshold to confirm special room
+            return max_color
+        return None
+    
+    def create_special_room_mask(self, room_image, room_type):
+        """Create mask for special rooms - blocks center if key not available"""
+        room_surface = pygame.Surface(room_image.size)
+        pixels = room_image.load()
+        
+        # Define the center passage area (vertical corridor in middle)
+        center_left = room_image.width // 2 - 30
+        center_right = room_image.width // 2 + 30
+        
+        for y in range(room_image.height):
+            for x in range(room_image.width):
+                r, g, b = pixels[x, y]
+                
+                # Grey pixels are always walkable
+                if 165 <= r <= 175 and 165 <= g <= 175 and 165 <= b <= 175:
+                    room_surface.set_at((x, y), (128, 128, 128))
+                # Check if pixel is in center passage
+                elif center_left <= x <= center_right:
+                    # Center passage - color it differently to handle dynamically
+                    room_surface.set_at((x, y), (64, 64, 64))  # Dark grey for locked passage
+                else:
+                    # Side walls - always solid
+                    room_surface.set_at((x, y), (0, 0, 0))
+        
+        # For now, create mask with center blocked
+        # We'll handle key logic in check_collision
+        mask = pygame.mask.from_threshold(room_surface, (0, 0, 0), (1,1,1,255))
+        return mask
+    
     def create_wall_mask(self, room_image):
         """Create a pygame.Mask where walls = 1 (non-grey pixels)"""
         room_surface = pygame.Surface(room_image.size)
         pixels = room_image.load()
+        
         for y in range(room_image.height):
             for x in range(room_image.width):
                 r, g, b = pixels[x, y]
@@ -39,17 +124,54 @@ class MapManager:
                     room_surface.set_at((x, y), (128, 128, 128))
                 else:
                     room_surface.set_at((x, y), (0, 0, 0))
+        
         # Create mask: walls (black) = 1, grey = 0
         mask = pygame.mask.from_threshold(room_surface, (0, 0, 0), (1,1,1,255))
         return mask
-
+    
     def check_collision(self, player_rect, player_mask):
         """Check pixel-perfect collision between player and current room walls"""
         col, row = self.current_room
+        special_type = self.rooms_special[row][col]
+        
+        # If special room and player doesn't have key, check center collision
+        if special_type and not self.keys[special_type]:
+            # Create temporary mask with center blocked
+            room_box = (
+                col * ROOM_WIDTH,
+                row * ROOM_HEIGHT,
+                (col + 1) * ROOM_WIDTH,
+                (row + 1) * ROOM_HEIGHT
+            )
+            room_image = self.map_image.crop(room_box)
+            room_surface = pygame.Surface(room_image.size)
+            pixels = room_image.load()
+            
+            center_left = room_image.width // 2 - 30
+            center_right = room_image.width // 2 + 30
+            
+            for y in range(room_image.height):
+                for x in range(room_image.width):
+                    r, g, b = pixels[x, y]
+                    
+                    # Grey pixels are walkable
+                    if 165 <= r <= 175 and 165 <= g <= 175 and 165 <= b <= 175:
+                        room_surface.set_at((x, y), (128, 128, 128))
+                    # Block center passage without key
+                    elif center_left <= x <= center_right:
+                        room_surface.set_at((x, y), (0, 0, 0))
+                    else:
+                        room_surface.set_at((x, y), (0, 0, 0))
+            
+            mask = pygame.mask.from_threshold(room_surface, (0, 0, 0), (1,1,1,255))
+            offset = (player_rect.left, player_rect.top)
+            return mask.overlap(player_mask, offset) is not None
+        
+        # Normal collision check
         room_mask = self.rooms_masks[row][col]
         offset = (player_rect.left, player_rect.top)
         return room_mask.overlap(player_mask, offset) is not None
-
+    
     def get_room_surface(self):
         col, row = self.current_room
         room_box = (
@@ -65,7 +187,7 @@ class MapManager:
         )
         surface.blit(pygame_image, (0,0))
         return surface
-
+    
     def move_room(self, direction):
         x, y = self.current_room
         if direction == "left" and x > 0:
@@ -77,3 +199,17 @@ class MapManager:
         elif direction == "down" and y < self.rows - 1:
             y += 1
         self.current_room = (x, y)
+    
+    def add_key(self, color):
+        """Add a key to the inventory"""
+        if color in self.keys:
+            self.keys[color] = True
+    
+    def has_key(self, color):
+        """Check if player has a specific key"""
+        return self.keys.get(color, False)
+    
+    def is_special_room(self):
+        """Check if current room is a special key room"""
+        col, row = self.current_room
+        return self.rooms_special[row][col]
