@@ -22,5 +22,22 @@ class MessageManager:
             if elapsed > msg["duration"]:
                 self.messages.remove(msg)
                 continue
-            text_surface = self.font.render(msg["text"], True, (255, 255, 255))
-            surface.blit(text_surface, (10, SCREEN_HEIGHT - 30))
+
+            # Wrap text to fit screen width
+            max_width = SCREEN_WIDTH - 20
+            words = msg["text"].split()
+            lines = []
+            current_line = ""
+            for word in words:
+                test_line = f"{current_line} {word}".strip()
+                if self.font.size(test_line)[0] <= max_width:
+                    current_line = test_line
+                else:
+                    lines.append(current_line)
+                    current_line = word
+            lines.append(current_line)
+
+            # Draw each line
+            for i, line in enumerate(lines):
+                text_surface = self.font.render(line, True, (255, 255, 255))
+                surface.blit(text_surface, (10, SCREEN_HEIGHT - 20*(len(lines)-i)))

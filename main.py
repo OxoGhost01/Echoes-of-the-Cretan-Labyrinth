@@ -64,17 +64,17 @@ while running:
         player.rect.topleft = new_pos
     
     # Room transitions
-    if player.rect.x < 0:
+    if player.rect.x < 1:
         map_manager.move_room("left")
         player.rect.x = SCREEN_WIDTH - player.rect.width
-    elif player.rect.x >= SCREEN_WIDTH:
+    elif player.rect.x >= SCREEN_WIDTH - 1:
         map_manager.move_room("right")
         player.rect.x = 0
     
-    if player.rect.y < 0:
+    if player.rect.y < 1:
         map_manager.move_room("up")
         player.rect.y = SCREEN_HEIGHT - player.rect.height
-    elif player.rect.y >= SCREEN_HEIGHT:
+    elif player.rect.y >= SCREEN_HEIGHT - 1:
         map_manager.move_room("down")
         player.rect.y = 0
     

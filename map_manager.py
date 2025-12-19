@@ -9,6 +9,11 @@ class MapManager:
         self.cols = self.map_width // ROOM_WIDTH
         self.rows = self.map_height // ROOM_HEIGHT
         self.current_room = (0, 0)
+
+        # Spawn position
+        self.spawn_room = (3, 6)
+        self.spawn_pos = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+
         
         # Keys inventory (color: has_key)
         self.keys = {
@@ -18,7 +23,7 @@ class MapManager:
         }
 
         self.key_colors = {
-            'blue': (51, 26, 163),     # #331aa3
+            'black': (51, 26, 163),    # #331aa3
             'yellow': (210, 210, 64),  # #d2d240
             'white': (236, 236, 236)   # #ececec
         }
@@ -248,9 +253,9 @@ class MapManager:
     
     def check_keys_at_player(self, player_rect, message_manager):
         key_messages = {
-            'blue': "Clé bleue : Le passage nord mène à un ancien sanctuaire oublié.",
-            'yellow': "Clé jaune : Les murs dorés de cette salle cachent de nombreux secrets.",
-            'white': "Clé blanche : Cette chambre était utilisée par les anciens scribes pour protéger leurs trésors."
+            'black': "Le passage nord mène à un ancien sanctuaire oublié.",
+            'yellow': "Les murs dorés de cette salle cachent de nombreux secrets.",
+            'white': "Cette chambre était utilisée par les anciens scribes pour protéger leurs trésors."
         }
         
 
@@ -282,3 +287,4 @@ class MapManager:
                         self.keys[key_name] = True
                         message_manager.show_message(key_messages[key_name], 5000)
                         break
+    
