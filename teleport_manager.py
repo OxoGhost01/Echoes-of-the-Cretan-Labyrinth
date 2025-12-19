@@ -1,4 +1,3 @@
-import random
 import pygame
 from settings import ROOM_WIDTH, ROOM_HEIGHT
 
@@ -12,7 +11,7 @@ class TeleportManager:
             {(4,8), (4,9)},
         ]
 
-        self.letter_size = (14, 14)
+        self.letter_size = (16, 16)
 
         self.letters = {
             (0, 0): [("A1", 5, 154), ("B1", 5, 89), ("C1", 5, 25), ("F1", 74, 4), ("E1", 233, 4)],
@@ -41,7 +40,7 @@ class TeleportManager:
                     ("D1", 1284, 1763), ("E1", 1284, 1827), ("F1", 1284, 1891)]
         }
 
-        self.cooldown_ms = 1500
+        self.cooldown_ms = 1000
         self.last_teleport_time = 0
 
     def get_zone_for_room(self, room):
@@ -92,21 +91,23 @@ class TeleportManager:
         target_label = base + target_suffix
 
         for room in zone:
+            if room == source_room:
+                continue  # skip current room to avoid self-teleport
             if room not in self.letters:
                 continue
 
             for label, gx, gy in self.letters[room]:
                 if label == target_label:
                     room_col, room_row = room
-
                     # Convert GLOBAL → ROOM-local
                     lx = gx - room_col * ROOM_WIDTH
                     ly = gy - room_row * ROOM_HEIGHT
-
                     # Small offset to avoid top-left overlap
                     return room, (lx + 2, ly + 2)
 
+        # fallback: if not found, do not teleport
         return None
+
     
     def get_letter_rects_for_room(self, room):
         rects = []
