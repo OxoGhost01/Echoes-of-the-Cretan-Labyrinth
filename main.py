@@ -3,6 +3,7 @@ from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from map_manager import MapManager
 from player import Player
 from teleport_manager import TeleportManager
+from message_manager import MessageManager
 
 
 pygame.init()
@@ -21,6 +22,10 @@ player = Player(start_pos=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
 all_sprites = pygame.sprite.Group(player)
 teleport_manager = TeleportManager()
 
+message_manager = MessageManager()
+message_manager.show_message("Bienvenue ! Trouvez les 3 clés pour libérer le Mynothor.", 5000)
+
+
 running = True
 while running:
     
@@ -38,7 +43,15 @@ while running:
         player.mask,
         teleport_manager):
         player.rect.topleft = old_pos
+        # Check if player is back at spawn room with all keys
+        spawn_room = (3, 6)
+        if map_manager.current_room == spawn_room:
+            if all(map_manager.keys.values()):
+                message_manager.show_message(
+                    "Bravo ! Vous avez libéré le Mynothor !", 5000
+                )
 
+    map_manager.check_keys_at_player(player.rect, message_manager)
 
     teleport_result = teleport_manager.check_teleport(
         player.rect,
@@ -68,6 +81,7 @@ while running:
     # Draw
     screen.blit(map_manager.get_room_surface(), (0, 0))
     all_sprites.draw(screen)
+    message_manager.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
 

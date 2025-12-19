@@ -16,6 +16,12 @@ class MapManager:
             'white': False,
             'yellow': False
         }
+
+        self.key_colors = {
+            'blue': (51, 26, 163),     # #331aa3
+            'yellow': (210, 210, 64),  # #d2d240
+            'white': (236, 236, 236)   # #ececec
+        }
         
         # Precompute wall masks and special room info for each room
         self.rooms_masks = []
@@ -239,3 +245,40 @@ class MapManager:
         """Check if current room is a special key room"""
         col, row = self.current_room
         return self.rooms_special[row][col]
+    
+    def check_keys_at_player(self, player_rect, message_manager):
+        key_messages = {
+            'blue': "Clé bleue : Le passage nord mène à un ancien sanctuaire oublié.",
+            'yellow': "Clé jaune : Les murs dorés de cette salle cachent de nombreux secrets.",
+            'white': "Clé blanche : Cette chambre était utilisée par les anciens scribes pour protéger leurs trésors."
+        }
+        
+
+
+        """Collect keys when player touches a pixel of key color"""
+        col, row = self.current_room
+        room_box = (
+            col * ROOM_WIDTH,
+            row * ROOM_HEIGHT,
+            (col + 1) * ROOM_WIDTH,
+            (row + 1) * ROOM_HEIGHT
+        )
+        room_image = self.map_image.crop(room_box)
+        pixels = room_image.load()
+
+        # Check each pixel under player rect
+        for y in range(player_rect.height):
+            for x in range(player_rect.width):
+                px = player_rect.x % ROOM_WIDTH + x
+                py = player_rect.y % ROOM_HEIGHT + y
+                if px >= room_image.width or py >= room_image.height:
+                    continue
+                r, g, b = pixels[px, py]
+
+                for key_name, color in self.key_colors.items():
+                    if self.keys[key_name]:
+                        continue  # already collected
+                    if (r, g, b) == color:
+                        self.keys[key_name] = True
+                        message_manager.show_message(key_messages[key_name], 5000)
+                        break
