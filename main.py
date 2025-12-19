@@ -8,7 +8,7 @@ from message_manager import MessageManager
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Aventure Archéologique")
+pygame.display.set_caption("Echoes of the Cretan Labyrinth")
 clock = pygame.time.Clock()
 
 # Initialize map manager first to know map dimensions
