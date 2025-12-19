@@ -1,8 +1,8 @@
-# A simple maze game using pygame.
+# A simple maze game using pygame. #
 
 i tried to make it looks like the Adventure game on Atari, because i like it a lot.
 
-## Welcome to Minos' Maze : The Labyrinth
+## Welcome to Minos' Maze : The Labyrinth ##
 
 Do you think you'll be able to deliver the Minotaur ?
 
