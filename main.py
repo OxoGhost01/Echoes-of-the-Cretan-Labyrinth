@@ -2,6 +2,8 @@ import pygame
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from map_manager import MapManager
 from player import Player
+from teleport_manager import TeleportManager
+
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -11,13 +13,13 @@ clock = pygame.time.Clock()
 # Initialize map manager first to know map dimensions
 map_manager = MapManager("assets/map.png")
 
-# Set spawn room to center (col=3, row=6 for 6x12 grid)
 map_manager.current_room = (3, 6)
 
 # Initialize player at center of screen
 player = Player(start_pos=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
 
 all_sprites = pygame.sprite.Group(player)
+teleport_manager = TeleportManager()
 
 running = True
 while running:
@@ -31,8 +33,22 @@ while running:
     player.handle_input()
     
     # Collision with walls
-    if map_manager.check_collision(player.rect, player.mask):
+    if map_manager.check_collision(
+        player.rect,
+        player.mask,
+        teleport_manager):
         player.rect.topleft = old_pos
+
+
+    teleport_result = teleport_manager.check_teleport(
+        player.rect,
+        map_manager.current_room
+    )
+
+    if teleport_result:
+        new_room, new_pos = teleport_result
+        map_manager.current_room = new_room
+        player.rect.topleft = new_pos
     
     # Room transitions
     if player.rect.x < 0:

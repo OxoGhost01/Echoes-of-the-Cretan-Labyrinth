@@ -112,24 +112,43 @@ class MapManager:
         return mask
     
     def create_wall_mask(self, room_image):
-        """Create a pygame.Mask where walls = 1 (non-grey pixels)"""
+        """
+        Normal rooms:
+        - Grey floor (#aaaaaa) = walkable
+        - Black background = walkable
+        - Any other color = wall
+        """
         room_surface = pygame.Surface(room_image.size)
         pixels = room_image.load()
-        
+
         for y in range(room_image.height):
             for x in range(room_image.width):
                 r, g, b = pixels[x, y]
-                # Grey pixels are walkable
-                if 165 <= r <= 175 and 165 <= g <= 175 and 165 <= b <= 175:
+
+                is_grey = (
+                    165 <= r <= 175 and
+                    165 <= g <= 175 and
+                    165 <= b <= 175
+                )
+
+                is_black = (r < 30 and g < 30 and b < 30)
+
+                is_white = (r > 230 and g > 230 and b > 230)
+                is_yellow = (r > 200 and g > 200 and b < 120)
+
+                if is_grey or is_black or is_white or is_yellow:
+                    # Walkable (floor, void, letters)
                     room_surface.set_at((x, y), (128, 128, 128))
                 else:
+                    # Wall
                     room_surface.set_at((x, y), (0, 0, 0))
-        
-        # Create mask: walls (black) = 1, grey = 0
-        mask = pygame.mask.from_threshold(room_surface, (0, 0, 0), (1,1,1,255))
-        return mask
+
+        return pygame.mask.from_threshold(
+            room_surface, (0, 0, 0), (1, 1, 1, 255)
+        )
+
     
-    def check_collision(self, player_rect, player_mask):
+    def check_collision(self, player_rect, player_mask, teleport_manager):
         """Check pixel-perfect collision between player and current room walls"""
         col, row = self.current_room
         special_type = self.rooms_special[row][col]
@@ -167,8 +186,15 @@ class MapManager:
             offset = (player_rect.left, player_rect.top)
             return mask.overlap(player_mask, offset) is not None
         
-        # Normal collision check
-        room_mask = self.rooms_masks[row][col]
+        room_mask = self.rooms_masks[row][col].copy()
+
+        # Make letters walkable
+        for letter_rect in teleport_manager.get_letter_rects_for_room(self.current_room):
+            room_mask.erase(
+                pygame.mask.Mask(letter_rect.size, fill=True),
+                letter_rect.topleft
+            )
+
         offset = (player_rect.left, player_rect.top)
         return room_mask.overlap(player_mask, offset) is not None
     
