@@ -60,7 +60,7 @@ class MapManager:
             self.rooms_special.append(row_special)
     
     def detect_special_room(self, room_image):
-        """Detect if room is a special key room by checking dominant non-grey color"""
+        """Detect if room is a special key room by checking dominant non-grey color (for the "castle" rooms)"""
         pixels = room_image.load()
         color_counts = {'black': 0, 'white': 0, 'yellow': 0}
         
@@ -81,7 +81,7 @@ class MapManager:
                 if r < 30 and g < 30 and b < 30:
                     color_counts['black'] += 1
                 # Detect white (very bright)
-                elif r > 240 and g > 240 and b > 240:
+                elif 205 <= r <= 225 and 205 <= g <= 225 and 205 <= b <= 225:
                     color_counts['white'] += 1
                 # Detect yellow
                 elif r > 200 and g > 200 and b < 100:
@@ -94,7 +94,7 @@ class MapManager:
         return None
     
     def create_special_room_mask(self, room_image, room_type):
-        """Create mask for special rooms - blocks center if key not available"""
+        """Create mask for special rooms - blocks center if key not found"""
         room_surface = pygame.Surface(room_image.size)
         pixels = room_image.load()
         
@@ -116,9 +116,7 @@ class MapManager:
                 else:
                     # Side walls - always solid
                     room_surface.set_at((x, y), (0, 0, 0))
-        
-        # For now, create mask with center blocked
-        # We'll handle key logic in check_collision
+
         mask = pygame.mask.from_threshold(room_surface, (0, 0, 0), (1,1,1,255))
         return mask
     
@@ -143,12 +141,11 @@ class MapManager:
                 )
 
                 is_black = (r < 30 and g < 30 and b < 30)
-
                 is_white = (r > 230 and g > 230 and b > 230)
                 is_yellow = (r > 200 and g > 200 and b < 120)
 
                 if is_grey or is_black or is_white or is_yellow:
-                    # Walkable (floor, void, letters)
+                    # Walkable (floor, void, letters -> if cheat enabled)
                     room_surface.set_at((x, y), (128, 128, 128))
                 else:
                     # Wall

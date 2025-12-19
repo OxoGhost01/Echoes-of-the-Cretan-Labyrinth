@@ -39,5 +39,5 @@ class MessageManager:
 
             # Draw each line
             for i, line in enumerate(lines):
-                text_surface = self.font.render(line, True, (255, 255, 255))
+                text_surface = self.font.render(line, True, (0, 0, 0))
                 surface.blit(text_surface, (10, SCREEN_HEIGHT - 20*(len(lines)-i)))

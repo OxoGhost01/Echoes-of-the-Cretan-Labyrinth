@@ -13,6 +13,7 @@ class TeleportManager:
 
         self.letter_size = (16, 16)
 
+        #  All letters coords, hand written ; you can see them by using the cheat map
         self.letters = {
             (0, 0): [("A1", 5, 154), ("B1", 5, 89), ("C1", 5, 25), ("F1", 74, 4), ("E1", 233, 4)],
             (0, 1): [("D1", 5, 283), ("E2", 233, 368), ("F2", 74, 368)],
@@ -50,6 +51,7 @@ class TeleportManager:
         return None
 
     def check_teleport(self, player_rect, current_room):
+        """Check if player is on a letter and teleport if so"""
         now = pygame.time.get_ticks()
 
         if now - self.last_teleport_time < self.cooldown_ms:
@@ -86,6 +88,7 @@ class TeleportManager:
 
 
     def _teleport_from(self, source_room, zone, source_label):
+        """ Teleport from source_label to target_label in zone """
         base = source_label[0]          # "A"
         target_suffix = "2" if source_label.endswith("1") else "1"
         target_label = base + target_suffix
@@ -110,6 +113,7 @@ class TeleportManager:
 
     
     def get_letter_rects_for_room(self, room):
+        """  Returns a list of letter rects for a given room """
         rects = []
         if room not in self.letters:
             return rects

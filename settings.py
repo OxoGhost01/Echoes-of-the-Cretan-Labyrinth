@@ -1,6 +1,6 @@
 # Screen settings
 SCREEN_WIDTH = 320
-SCREEN_HEIGHT = 193  # Display size = size of a room
+SCREEN_HEIGHT = 193  # Display size = size of a room ; should be 193.083333333333... this is why we can see a little bit of others rooms sometimes
 FPS = 60
 
 # Room settings

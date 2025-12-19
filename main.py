@@ -11,19 +11,17 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Echoes of the Cretan Labyrinth")
 clock = pygame.time.Clock()
 
-# Initialize map manager first to know map dimensions
-map_manager = MapManager("assets/map.png")
+map_manager = MapManager("assets/map_no_letters_FIX.png")  #! change this to map.png to add the letters (CHEAT)
 
 map_manager.current_room = (3, 6)
 
-# Initialize player at center of screen
 player = Player(start_pos=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
 
 all_sprites = pygame.sprite.Group(player)
 teleport_manager = TeleportManager()
 
 message_manager = MessageManager()
-message_manager.show_message("Bienvenue ! Trouvez les 3 clés pour libérer le Mynothor.", 5000)
+message_manager.show_message("Bienvenue ! Trouvez les 3 clés pour libérer le Minotaure.", 5000)
 
 
 running = True
@@ -43,16 +41,19 @@ while running:
         player.mask,
         teleport_manager):
         player.rect.topleft = old_pos
-        # Check if player is back at spawn room with all keys
-        spawn_room = (3, 6)
-        if map_manager.current_room == spawn_room:
-            if all(map_manager.keys.values()):
-                message_manager.show_message(
-                    "Bravo ! Vous avez libéré le Mynothor !", 5000
-                )
+    
+    # Check if player is at final room with all keys
+    final_room = (3, 4)
+    if map_manager.current_room == final_room:
+        if all(map_manager.keys.values()):
+            message_manager.show_message(
+                "Bravo ! Vous avez libéré le Minotaure !", 5000
+            )
 
+    # Check if on a key and display message if so
     map_manager.check_keys_at_player(player.rect, message_manager)
 
+    #To teleport when inside a maze
     teleport_result = teleport_manager.check_teleport(
         player.rect,
         map_manager.current_room
